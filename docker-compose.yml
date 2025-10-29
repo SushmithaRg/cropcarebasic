@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  cropcare-app:
+    build: .
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/app/data/cropcare.db
+      - JWT_SECRET=your_production_jwt_secret
+      - ML_ENDPOINT=${ML_ENDPOINT}
+      - ML_KEY=${ML_KEY}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+    volumes:
+      - cropcare_data:/app/data
+      - cropcare_uploads:/app/server/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - cropcare-app
+    restart: unless-stopped
+
+volumes:
+  cropcare_data:
+  cropcare_uploads:
